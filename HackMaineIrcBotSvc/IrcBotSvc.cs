@@ -159,25 +159,24 @@ namespace HackMaineIrcBot
             Console.WriteLine("Service Starting...");
 
             Thread.Sleep(TimeSpan.FromSeconds(30));
-            Irc.Initialize();
-            Irc.Enabled = true;
+            Program.Run(true);
         }
 
         protected override void OnStop()
         {
             Console.WriteLine("Service Stopping...");
-            Irc.Enabled = false;
+            Program.Kill(false);
         }
 
         protected override void OnPause()
         {
             Console.WriteLine("Service OnPause...");
-            Irc.Enabled = false;
+            Program.Pause();
         }
         protected override void OnContinue()
         {
             Console.WriteLine("Service OnContinue...");
-            Irc.Enabled = true;
+            Program.Continue();
         }
     }
 }

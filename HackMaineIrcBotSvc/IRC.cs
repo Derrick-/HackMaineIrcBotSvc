@@ -13,6 +13,10 @@ namespace HackMaineIrcBot
 {
     class Irc
     {
+        public static IPEndPoint FixedEndpoint = null;
+
+        static bool debug=true;
+
         public static string IRCServer = "irc.freenode.net";
         public static int Port = 6667;
         public static int SSLPort = 7000;
@@ -83,30 +87,38 @@ namespace HackMaineIrcBot
             t.Start();
         }
 
+        private static bool _initialized = false;
         public static void Initialize()
         {
-            IPEndPoint ep = ReadAddressConfig();
+            if (!_initialized)
+            {
+                FixedEndpoint = ReadAddressConfig();
 
-            //irc.OnReadLine += new ReadLineEventHandler(irc_OnReadLine);
-            irc.ActiveChannelSyncing = true;
+                //irc.OnReadLine += new ReadLineEventHandler(irc_OnReadLine);
+                irc.ActiveChannelSyncing = true;
 
-            irc.AutoRetryDelay = 120;
+                irc.AutoRetryDelay = 120;
 
-            irc.OnConnected += new EventHandler(Client_OnConnected);
-            irc.OnChannelMessage += new IrcEventHandler(Client_OnChannelMessage);
-            irc.OnQueryMessage += new IrcEventHandler(Client_OnQueryMessage);
-            irc.OnDisconnected += new EventHandler(irc_OnDisconnected);
-            irc.OnInvite += new InviteEventHandler(irc_OnInvite);
-            irc.OnKick += new KickEventHandler(irc_OnKick);
-            irc.OnJoin += new JoinEventHandler(irc_OnJoin);
-            irc.OnPart += new PartEventHandler(irc_OnPart);
-            irc.OnBan += new BanEventHandler(irc_OnBan);
-            irc.OnQueryNotice += new IrcEventHandler(Client_OnQueryNotice);
-            irc.OnError += new Meebey.SmartIrc4net.ErrorEventHandler(irc_OnError);
-            irc.OnConnectionError += new EventHandler(irc_OnConnectionError);
+                irc.OnConnected += new EventHandler(Client_OnConnected);
+                irc.OnChannelMessage += new IrcEventHandler(Client_OnChannelMessage);
+                irc.OnQueryMessage += new IrcEventHandler(Client_OnQueryMessage);
+                irc.OnDisconnected += new EventHandler(irc_OnDisconnected);
+                irc.OnInvite += new InviteEventHandler(irc_OnInvite);
+                irc.OnKick += new KickEventHandler(irc_OnKick);
+                irc.OnJoin += new JoinEventHandler(irc_OnJoin);
+                irc.OnPart += new PartEventHandler(irc_OnPart);
+                irc.OnBan += new BanEventHandler(irc_OnBan);
+                irc.OnQueryNotice += new IrcEventHandler(Client_OnQueryNotice);
+                irc.OnError += new Meebey.SmartIrc4net.ErrorEventHandler(irc_OnError);
+                irc.OnConnectionError += new EventHandler(irc_OnConnectionError);
 
-            LoadChannels();
+                LoadChannels();
 
+                m_Enabled = true;
+                Timer.DelayCall(TimeSpan.FromSeconds(4), Connect);
+
+                _initialized = true;
+            }
         }
 
         private static Dictionary<string, IPAddress> rescache = new Dictionary<string, IPAddress>(100);
@@ -179,11 +191,7 @@ namespace HackMaineIrcBot
 
             Channels.Clear();
 
-            if (Program.TestMode)
-            {
-                Console.Write("Canceled, test mode.");
-            }
-            else if (File.Exists(SavePath))
+            if (File.Exists(SavePath))
                 try
                 {
                     using (StreamReader sr = new StreamReader(SavePath))
@@ -317,12 +325,22 @@ namespace HackMaineIrcBot
             //Client.WriteLine(Rfc2812.User(Nick, 0, Server.Misc.ServerList.ServerName), Priority.Critical);
             irc.Login(Nick, AuthUser);
             Console.WriteLine("IRC: Connected {2}to {0}:{1}", irc.Address, irc.Port, irc.UseSsl ? "SSL " : "");
-            irc.SendMessage(SendType.Message, AuthServ, string.Format("IDENTIFY {0} {1}", AuthUser, AuthPass));
-            irc.WriteLine(Rfc2812.Mode("+x"));
-            Console.WriteLine("IRC: Joining {0}", MainChannel);
-            irc.WriteLine(Rfc2812.Join(MainChannel));
+            Timer.DelayCall(TimeSpan.FromSeconds(2),Auth);
+            Timer.DelayCall(TimeSpan.FromSeconds(4),JoinMain);
             Timer.DelayCall(TimeSpan.FromSeconds(15), JoinChannels);
             DoListen();
+        }
+
+        private static void Auth()
+        {
+            SendMessage(SendType.Message, AuthServ, string.Format("IDENTIFY {0} {1}", AuthUser, AuthPass), Priority.Critical);
+            WriteLine(Rfc2812.Mode("+x"));
+        }
+
+        private static void JoinMain()
+        {
+            Console.WriteLine("IRC: Joining {0}", MainChannel);
+            WriteLine(Rfc2812.Join(MainChannel), Priority.Critical);
         }
 
         static void JoinChannels()
@@ -333,7 +351,7 @@ namespace HackMaineIrcBot
 
                 foreach (string channel in Channels)
                 {
-                    Timer.DelayCall<string>((secs += 5) * 4, Join, channel);
+                    Timer.DelayCall<string>(TimeSpan.FromSeconds((secs += 5) * 4), Join, channel);
                 }
             }
         }
@@ -376,7 +394,7 @@ namespace HackMaineIrcBot
             if (irc.IsConnected && Enabled)
             {
                 Console.WriteLine("IRC: Rejoining {0}", channel);
-                irc.WriteLine(Rfc2812.Join(channel), Priority.Low);
+                WriteLine(Rfc2812.Join(channel), Priority.Low);
             }
         }
 
@@ -403,7 +421,6 @@ namespace HackMaineIrcBot
             Console.WriteLine("IRC Connection Error.");
         }
 
-
         public static void BroadcastAllChannels(string message)
         {
             BroadcastAllChannels(message, false);
@@ -419,21 +436,53 @@ namespace HackMaineIrcBot
                 return;
 
             foreach (string channel in channels)
-                irc.SendMessage(SendType.Message, channel, message);
+                SendMessage(SendType.Message, channel, message);
         }
 
         static char IRCNoticePrefix = '!';
 
         static void Client_OnQueryNotice(object sender, IrcEventArgs e)
         {
+            WriteDebug(e);
+
             if (e.Data.From.IndexOf(IRCNoticePrefix) > 0)
                 ProcessNoticeMessage(e.Data);
+        }
+
+        static void SendMessage(SendType type, string destination, string message)
+        {
+            SendMessage(type, destination, message, Priority.Medium);
+        }
+
+        static void SendMessage(SendType type, string destination, string message, Priority priority)
+        {
+            if (debug)
+                Console.WriteLine("Sending {0} to: {1}: {2}", type, destination, message);
+            irc.SendMessage(type, destination, message, priority);
+        }
+
+        static void WriteLine(string data)
+        {
+            WriteLine(data, Priority.Medium);
+        }
+
+        static void WriteLine(string data, Priority priority)
+        {
+            if (debug)
+                Console.WriteLine("Sending data: {0}", data);
+            irc.WriteLine(data, priority);
+        }
+
+        private static void WriteDebug(IrcEventArgs e)
+        {
+            if (debug)
+                Console.WriteLine(e.Data.Type.ToString() + " from {0}: {1}", e.Data.From, e.Data.Message);
         }
 
         static void ProcessNoticeMessage(IrcMessageData data)
         {
             if (!string.IsNullOrWhiteSpace(ChannelToPrintNoticesIn))
-                irc.SendMessage(SendType.Message, ChannelToPrintNoticesIn, data.From + ": " + data.Message);
+                SendMessage(SendType.Message, ChannelToPrintNoticesIn, data.From + ": " + data.Message);
 
             if (data.From == AuthServ || data.From.IndexOf(IRCNoticePrefix) + 1 == data.From.IndexOf(AuthServ) && data.Message.Contains("You are now identified "))
                 SendSelfInvitesOnLogin();
@@ -447,6 +496,8 @@ namespace HackMaineIrcBot
         static DateTime NextQueryCommand = DateTime.MinValue;
         static void Client_OnQueryMessage(object sender, IrcEventArgs e)
         {
+            WriteDebug(e);
+
             if (NextQueryCommand > DateTime.Now)
                 return;
 
@@ -456,10 +507,10 @@ namespace HackMaineIrcBot
                 if (chans.Length > 0)
                 {
                     string channels = String.Join(", ", chans);
-                    irc.SendMessage(SendType.Message, e.Data.Nick, channels);
+                    SendMessage(SendType.Message, e.Data.Nick, channels);
                 }
                 else
-                    irc.SendMessage(SendType.Message, e.Data.Nick, "No channels");
+                    SendMessage(SendType.Message, e.Data.Nick, "No channels");
             }
             else if (e.Data.Message.StartsWith("!"))
             {
@@ -476,13 +527,15 @@ namespace HackMaineIrcBot
 
         static void SendHelp(string to)
         {
-            irc.SendMessage(SendType.Message, to, "The current commands are !status !events !motd !vote !time !rules and !help. You must wait 15 seconds between commands.", Priority.Low);
+            SendMessage(SendType.Message, to, "The current commands are !status !events !motd !vote !time !rules and !help. You must wait 15 seconds between commands.", Priority.Low);
         }
 
         static DateTime NextChannelCommand = DateTime.MinValue;
 
         static void Client_OnChannelMessage(object sender, IrcEventArgs e)
         {
+            WriteDebug(e);
+
             if (NextChannelCommand > DateTime.Now)
                 return;
 
@@ -523,26 +576,26 @@ namespace HackMaineIrcBot
                 //    throw new Exception("Test Exception");
                 //    break;
                 case "time":
-                    irc.SendMessage(SendType.Message, from, string.Format("The server time is {0}", DateTime.Now), Priority.Low);
+                    SendMessage(SendType.Message, from, string.Format("The server time is {0}", DateTime.Now), Priority.Low);
                     break;
                 case "rules":
                     if (isMainChannel(from))
-                        irc.SendMessage(SendType.Message, from, "Welcome. This channel is for civil discussion. Read Rules: http://forum.uosecondage.com/viewtopic.php?f=2&t=104", Priority.Low);
+                        SendMessage(SendType.Message, from, "Welcome. This channel is for civil discussion. Read Rules: http://forum.uosecondage.com/viewtopic.php?f=2&t=104", Priority.Low);
                     else
-                        irc.SendMessage(SendType.Message, from, "I am a guest in this channel. Please consult with the channel operators for information on their rules.", Priority.Low);
+                        SendMessage(SendType.Message, from, "I am a guest in this channel. Please consult with the channel operators for information on their rules.", Priority.Low);
                     break;
                 case "help":
                     SendHelp(from);
                     break;
                 case "status":
-                    irc.SendMessage(SendType.Message, from, "Hello there", Priority.Low);
+                    SendMessage(SendType.Message, from, "Hello there", Priority.Low);
                     break;
                 case "vote":
-                    irc.SendMessage(SendType.Message, from, "Please vote for Second Age using the links at: http://www.uosecondage.com/Vote", Priority.Low);
+                    SendMessage(SendType.Message, from, "Please vote for Second Age using the links at: http://www.uosecondage.com/Vote", Priority.Low);
                     break;
                 case "motd":
                     string info = "There is not a Message Of The Day at this time.";
-                    irc.SendMessage(SendType.Message, from, info, Priority.Low);
+                    SendMessage(SendType.Message, from, info, Priority.Low);
                     break;
                 case "part":
                     {
@@ -553,20 +606,20 @@ namespace HackMaineIrcBot
                             {
                                 if (ChannelsContains(chan))
                                 {
-                                    irc.WriteLine(Rfc2812.Part(chan), Priority.High);
-                                    irc.SendMessage(SendType.Message, MainChannel, "Parting " + chan, Priority.Medium);
+                                    WriteLine(Rfc2812.Part(chan), Priority.High);
+                                    SendMessage(SendType.Message, MainChannel, "Parting " + chan, Priority.Medium);
                                     ChannelsRemove(chan);
                                 }
                                 else
-                                    irc.SendMessage(SendType.Message, MainChannel, "To the best of my knowledge, I'm not in that channel.", Priority.Medium);
+                                    SendMessage(SendType.Message, MainChannel, "To the best of my knowledge, I'm not in that channel.", Priority.Medium);
                             }
                             else
                             {
-                                irc.SendMessage(SendType.Message, MainChannel, "Invalid channel.", Priority.Medium);
+                                SendMessage(SendType.Message, MainChannel, "Invalid channel.", Priority.Medium);
                             }
                         }
                         else
-                            irc.SendMessage(SendType.Message, MainChannel, "usage: !part <channel>", Priority.Medium);
+                            SendMessage(SendType.Message, MainChannel, "usage: !part <channel>", Priority.Medium);
                         SentToChannel = false;
                     }
                     break;
@@ -579,19 +632,19 @@ namespace HackMaineIrcBot
                             {
                                 if (!ChannelsContains(chan))
                                 {
-                                    irc.WriteLine(Rfc2812.Join(chan), Priority.High);
-                                    irc.SendMessage(SendType.Message, MainChannel, "Joining " + chan, Priority.Medium);
+                                    WriteLine(Rfc2812.Join(chan), Priority.High);
+                                    SendMessage(SendType.Message, MainChannel, "Joining " + chan, Priority.Medium);
                                 }
                                 else
-                                    irc.SendMessage(SendType.Message, MainChannel, "To the best of my knowledge, I'm already in that channel. Try !part first.", Priority.Medium);
+                                    SendMessage(SendType.Message, MainChannel, "To the best of my knowledge, I'm already in that channel. Try !part first.", Priority.Medium);
                             }
                             else
                             {
-                                irc.SendMessage(SendType.Message, MainChannel, "Invalid channel.", Priority.Medium);
+                                SendMessage(SendType.Message, MainChannel, "Invalid channel.", Priority.Medium);
                             }
                         }
                         else
-                            irc.SendMessage(SendType.Message, MainChannel, "usage: !join <channel>", Priority.Medium);
+                            SendMessage(SendType.Message, MainChannel, "usage: !join <channel>", Priority.Medium);
                         SentToChannel = false;
                     }
                     break;
@@ -600,7 +653,7 @@ namespace HackMaineIrcBot
                     {
                         if (MessageArray.Length < 2)
                         {
-                            irc.SendMessage(SendType.Message, MainChannel, string.Format("usage: !{0} <user> [channel] [reason]", command), Priority.Medium);
+                            SendMessage(SendType.Message, MainChannel, string.Format("usage: !{0} <user> [channel] [reason]", command), Priority.Medium);
                         }
                         else
                         {
@@ -624,11 +677,11 @@ namespace HackMaineIrcBot
                                     if (u != null)
                                         irc.RfcMode(string.Format("{0} +b :*!{1}@{2}", channel, u.Ident, u.Host));
                                     else
-                                        irc.SendMessage(SendType.Message, MainChannel, string.Format("User {0} not found.", user), Priority.Medium);
+                                        SendMessage(SendType.Message, MainChannel, string.Format("User {0} not found.", user), Priority.Medium);
                                 }
                                 catch (Exception e)
                                 {
-                                    irc.SendMessage(SendType.Message, MainChannel, string.Format("Exception:{0}", e.Message), Priority.Medium);
+                                    SendMessage(SendType.Message, MainChannel, string.Format("Exception:{0}", e.Message), Priority.Medium);
                                 }
                             }
 
