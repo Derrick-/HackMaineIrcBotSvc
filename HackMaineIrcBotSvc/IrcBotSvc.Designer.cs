@@ -1,6 +1,6 @@
-﻿namespace HackMaineIrcBotSvc
+﻿namespace HackMaineIrcBot
 {
-    partial class Service1
+    partial class IrcBotSvc
     {
         /// <summary> 
         /// Required designer variable.
