@@ -30,7 +30,7 @@ namespace HackMaineIrcBot.Irc.Commands
                     command = command.Substring(1, command.Length - 1);
                     BaseIrcCommand commandobject;
                     if (_registry.TryGetValue(command, out commandobject))
-                        commandobject.OnChannelCommand(e.Data.Channel, e.Data.Message);
+                        commandobject.OnChannelCommand(e.Data.Channel, e.Data.Message, e.Data.MessageArray.Skip(1));
                 }
             }
         }
