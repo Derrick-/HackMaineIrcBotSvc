@@ -45,7 +45,8 @@ namespace HackMaineIrcBot
 
         public static string Arguments { get; set; }
         public static bool Service { get { return m_Service; } }
-        public static bool TestMode { get; set; }
+        public static bool TestMode { get; private set; }
+        public static bool Debug { get; private set; }
 
         public static Assembly Assembly { get { return m_Assembly; } set { m_Assembly = value; } }
         public static Version Version { get { return m_Assembly.GetName().Version; } }
@@ -100,7 +101,7 @@ namespace HackMaineIrcBot
 
             Console.WriteLine("Starting...");
 
-            TestMode = true;
+            Debug = TestMode = true;
 
             if (args.Length == 1 &&
                 (Insensitive.Equals(args[0], "-install") || Insensitive.Equals(args[0], "-uninstall")
@@ -138,15 +139,7 @@ namespace HackMaineIrcBot
                 else if (Insensitive.Equals(args[0], "-con"))
                 {
                     Run(false);
-
-                    while (Console.KeyAvailable) Console.ReadKey(false);
-                    Irc.Enabled = true;
-                    Console.WriteLine("Press any key to exit...");
-
-                    ThreadPool.QueueUserWorkItem(new WaitCallback(GetKey), waitHandles[0]);
-                    int index = WaitHandle.WaitAny(waitHandles);
-
-                    Irc.Enabled = false;
+                    //Test.Main(args);
                 }
 
                 return;

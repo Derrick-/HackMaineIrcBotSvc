@@ -49,7 +49,7 @@
   <ItemGroup>
     <Compile Include="Attributes\CallPriority.cs" />
     <Compile Include="EventSink.cs" />
-    <Compile Include="IRC.cs" />
+    <Compile Include="IrcBot.cs" />
     <Compile Include="IrcBotSvc.cs">
       <SubType>Component</SubType>
     </Compile>
