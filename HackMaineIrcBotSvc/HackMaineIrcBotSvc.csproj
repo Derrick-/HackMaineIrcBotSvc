@@ -49,6 +49,10 @@
   <ItemGroup>
     <Compile Include="Attributes\CallPriority.cs" />
     <Compile Include="Core\EventSink.cs" />
+    <Compile Include="Irc\Commands\Handlers\Help.cs" />
+    <Compile Include="Irc\Commands\BaseIrcCommand.cs" />
+    <Compile Include="Irc\Commands\IRCCommandAttribute.cs" />
+    <Compile Include="Irc\Commands\IrcCommandHandler.cs" />
     <Compile Include="Irc\IrcBot.cs" />
     <Compile Include="Core\IrcBotSvc.cs">
       <SubType>Component</SubType>
@@ -57,6 +61,7 @@
       <DependentUpon>IrcBotSvc.cs</DependentUpon>
     </Compile>
     <Compile Include="Core\Logger.cs" />
+    <Compile Include="Irc\IrcEvents.cs" />
     <Compile Include="Irc\SmartIrc4net3\Consts.cs" />
     <Compile Include="Irc\SmartIrc4net3\EventArgs.cs" />
     <Compile Include="Irc\SmartIrc4net3\Exceptions.cs" />
@@ -81,6 +86,7 @@
     <Compile Include="Irc\SmartIrc4net3\IrcConnection\IrcTcpClient.cs" />
     <Compile Include="Irc\SmartIrc4net3\Logger.cs" />
     <Compile Include="Core\Timer.cs" />
+    <Compile Include="Utilities\ConsoleUtils.cs" />
     <Compile Include="Utilities\Insensitive.cs" />
     <Compile Include="Core\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -89,7 +95,9 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

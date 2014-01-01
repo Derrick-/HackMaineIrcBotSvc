@@ -4,7 +4,7 @@ using System.Collections;
 using System.IO;
 using System.Net;
 
-namespace HackMaineIrcBot
+namespace HackMaineIrcBot.Irc
 {
 
     public class IrcBot
@@ -33,7 +33,8 @@ namespace HackMaineIrcBot
             irc.SendDelay = 200;
             irc.AutoRetry = true;
             irc.ActiveChannelSyncing = true;
-            irc.OnQueryMessage += OnQueryMessage;
+            irc.OnQueryMessage += irc_OnQueryMessage;
+            irc.OnChannelMessage += irc_OnChannelMessage;
             irc.OnConnecting += irc_OnConnecting;
             irc.OnConnected += irc_OnConnected;
 
@@ -93,7 +94,15 @@ namespace HackMaineIrcBot
                 Enabled = false;
         }
 
-        static void OnQueryMessage(object sender, IrcEventArgs e)
+        static void irc_OnChannelMessage(object sender, IrcEventArgs e)
+        {
+            if (Program.Debug)
+                Console.WriteLine("<- Channel: {0} | {1} | {2}", e.Data.From, e.Data.Channel ?? "null", e.Data.Message);
+
+            IrcEvents.InvokeOnChannelMessage(new ChannelMessageEventArgs(e.Data));
+        }
+
+        static void irc_OnQueryMessage(object sender, IrcEventArgs e)
         {
             if (Program.Debug)
                 Console.WriteLine("<- Query: {0} | {1} | {2}", e.Data.From, e.Data.Channel ?? "null" , e.Data.Message);
@@ -133,17 +142,24 @@ namespace HackMaineIrcBot
             irc.WriteLine(data, priority);
         }
 
-        static void SendMessage(SendType type, string destination, string message)
+        public static void SendMessage(SendType type, string destination, string message)
         {
             SendMessage(type, destination, message, Priority.Medium);
         }
 
-        static void SendMessage(SendType type, string destination, string message, Priority priority)
+        public static void SendMessage(SendType type, string destination, string message, Priority priority)
         {
             if (Program.Debug)
                 Console.WriteLine("-> Message: {0} | {1} | {2} | {3}", type, destination, message, priority);
 
-            irc.SendMessage(type, destination, message, priority);
+            try
+            {
+                irc.SendMessage(type, destination, message, priority);
+            }
+            catch (NotConnectedException)
+            {
+                ConsoleUtils.WriteWarning("IRC Message not sent: Not Connected!");
+            }
         }
 
         static IPEndPoint ReadAddressConfig()

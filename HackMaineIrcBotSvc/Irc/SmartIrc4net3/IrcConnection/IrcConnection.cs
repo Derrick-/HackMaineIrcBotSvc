@@ -460,8 +460,8 @@ namespace Meebey.SmartIrc4net
                 _TcpClient.Socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
 
                 // Check for forced ip config -=Derrick=-
-                if (HackMaineIrcBot.IrcBot.FixedEndpoint != null)
-                    _TcpClient.Client.Bind(new System.Net.IPEndPoint(HackMaineIrcBot.IrcBot.FixedEndpoint.Address, 0));
+                if (HackMaineIrcBot.Irc.IrcBot.FixedEndpoint != null)
+                    _TcpClient.Client.Bind(new System.Net.IPEndPoint(HackMaineIrcBot.Irc.IrcBot.FixedEndpoint.Address, 0));
                 
                 // set timeout, after this the connection will be aborted
                 _TcpClient.ReceiveTimeout = _SocketReceiveTimeout*1000;
