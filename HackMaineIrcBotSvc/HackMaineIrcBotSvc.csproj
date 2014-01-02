@@ -54,6 +54,8 @@
     <Compile Include="Irc\Commands\Handlers\Version.cs" />
     <Compile Include="Irc\Commands\IRCCommandAttribute.cs" />
     <Compile Include="Irc\Commands\IrcCommandHandler.cs" />
+    <Compile Include="Irc\Hooks\BaseIrcHook.cs" />
+    <Compile Include="Irc\Hooks\UrlHook.cs" />
     <Compile Include="Irc\IrcBot.cs" />
     <Compile Include="Core\IrcBotSvc.cs">
       <SubType>Component</SubType>
@@ -92,6 +94,7 @@
     <Compile Include="Core\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Core\ServiceInstaller.cs" />
+    <Compile Include="Utilities\ReflectionUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

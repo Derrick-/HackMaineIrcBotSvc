@@ -4,26 +4,58 @@ using System.Reflection;
 
 namespace HackMaineIrcBot
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class CallPriorityAttribute : Attribute
-    {
-        private int m_Priority;
 
-        public int Priority
+    public enum MemberPriority : byte
+    {
+        Lowest=0,
+        BelowNormal=50,
+        Normal=100,
+        AboveNormal=150,
+        Highest=255,
+    }
+
+    public class CallPriorityComparer : BasePriorityComparer<MethodInfo, CallPriorityAttribute> { }
+    public class TypePriorityComparer : BasePriorityComparer<Type, TypePriorityAttribute> { }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class CallPriorityAttribute : BasePriorityAttribute
+    {
+        public CallPriorityAttribute(MemberPriority priority) : base(priority) { }
+    }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public class TypePriorityAttribute : BasePriorityAttribute
+    {
+        public TypePriorityAttribute(MemberPriority priority) : base(priority) { }
+    }
+
+    public abstract class BasePriorityAttribute : Attribute
+    {
+        private MemberPriority m_Priority;
+
+        public MemberPriority Priority
         {
             get { return m_Priority; }
             set { m_Priority = value; }
         }
 
-        public CallPriorityAttribute(int priority)
+        public BasePriorityAttribute(MemberPriority priority)
         {
             m_Priority = priority;
         }
     }
 
-    public class CallPriorityComparer : IComparer<MethodInfo>
+    public abstract class BasePriorityComparer<Tmember, Tattr> : IComparer<Tmember>
+        where Tmember : System.Runtime.InteropServices._MemberInfo
+        where Tattr : BasePriorityAttribute
     {
-        public int Compare(MethodInfo x, MethodInfo y)
+        protected object[] GetAttributes(Tmember t)
+        {
+            object[] objs = t.GetCustomAttributes(typeof(Tattr), true);
+            return objs;
+        }
+
+        public int Compare(Tmember x, Tmember y)
         {
             if (x == null && y == null)
                 return 0;
@@ -37,9 +69,9 @@ namespace HackMaineIrcBot
             return GetPriority(x) - GetPriority(y);
         }
 
-        private int GetPriority(MethodInfo mi)
+        private MemberPriority GetPriority(Tmember mi)
         {
-            object[] objs = mi.GetCustomAttributes(typeof(CallPriorityAttribute), true);
+            object[] objs = GetAttributes(mi);
 
             if (objs == null)
                 return 0;
@@ -47,7 +79,7 @@ namespace HackMaineIrcBot
             if (objs.Length == 0)
                 return 0;
 
-            CallPriorityAttribute attr = objs[0] as CallPriorityAttribute;
+            Tattr attr = objs[0] as Tattr;
 
             if (attr == null)
                 return 0;

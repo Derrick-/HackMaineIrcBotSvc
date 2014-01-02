@@ -55,7 +55,7 @@ namespace HackMaineIrcBot.Irc.Commands
         private static void RegisterAllCommands()
         {
             Console.WriteLine("Registering IRC commands:");
-            List<Type> types = FindInheritedTypes(typeof(BaseIrcCommand));
+            List<Type> types = ReflectionUtils.FindInheritedTypes(typeof(BaseIrcCommand));
             foreach (var t in types)
             {
                 object[] attrs = t.GetCustomAttributes(typeof(IRCCommandAttribute), false);
@@ -83,16 +83,6 @@ namespace HackMaineIrcBot.Irc.Commands
             }
         }
 
-        public static List<Type> FindInheritedTypes(Type parenttype)
-        {
-            List<Type> list = new List<Type>();
-            foreach (var t in Program.Assembly.GetTypes())
-            {
-                if (t != parenttype && parenttype.IsAssignableFrom(t))
-                    list.Add(t);
-            }
-            return list;
-        }
 
     }
 }
