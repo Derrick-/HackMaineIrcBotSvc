@@ -9,7 +9,7 @@ namespace HackMaineIrcBot.Irc.Commands.Handlers
         public override string Description { get { return "Provides a list of commands"; } }
         public override string UsageSuffix { get { return "[commands|hooks|all][verbose]"; } }
 
-        protected override void Handle(CommandResponder responder, string command, IEnumerable<string> args)
+        protected override void Handle(BaseIrcResponder responder, string command, IEnumerable<string> args)
         {
             bool verbose = false;
             foreach(var arg in args)
@@ -58,12 +58,12 @@ namespace HackMaineIrcBot.Irc.Commands.Handlers
             }
         }
 
-        private void SendHooksList(CommandResponder responder, bool verbose = false)
+        private void SendHooksList(BaseIrcResponder responder, bool verbose = false)
         {
             responder.SendResponseLine("There are no registered hooks.");
         }
 
-        private void SendCommandList(CommandResponder responder, bool verbose = false)
+        private void SendCommandList(BaseIrcResponder responder, bool verbose = false)
         {
             var items = IrcCommandHandler.Registry;
             responder.SendResponseLine("There are {0} registered commands:", items.Count());
@@ -71,7 +71,7 @@ namespace HackMaineIrcBot.Irc.Commands.Handlers
                 SendCommandInfo(responder, nfo, verbose);
         }
 
-        private void SendCommandInfo(CommandResponder responder, KeyValuePair<string, BaseIrcCommand> nfo, bool verbose = false)
+        private void SendCommandInfo(BaseIrcResponder responder, KeyValuePair<string, BaseIrcCommand> nfo, bool verbose = false)
         {
             if (verbose)
                 responder.SendResponseLine("  {0}{1,-40}: {2}, IrcCommandHandler.commandPrefix", IrcCommandHandler.commandPrefix, string.IsNullOrWhiteSpace(nfo.Value.UsageSuffix) ? nfo.Key : string.Format("{0} {1}", nfo.Key, nfo.Value.UsageSuffix), nfo.Value.Description);

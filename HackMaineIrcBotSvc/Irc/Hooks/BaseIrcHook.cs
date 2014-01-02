@@ -8,7 +8,7 @@ namespace HackMaineIrcBot.Irc.Hooks
 {
     abstract class BaseIrcHook
     {
-        protected abstract bool Handle(ChannelMessageEventArgs e);
+        protected abstract Task<bool> Handle(BaseIrcResponder responder, ChannelMessageEventArgs e);
 
         private static string _name;
         public string Name
@@ -55,9 +55,12 @@ namespace HackMaineIrcBot.Irc.Hooks
 
         private static void IrcEvents_OnChannelMessage(ChannelMessageEventArgs e)
         {
-            foreach (var hook in Registry)
-                if (hook.Handle(e))
-                    break;
+            Task.Run(async () =>
+            {
+                foreach (var hook in Registry)
+                    if (await hook.Handle(new ChannelResponder(e.Data.Channel), e))
+                        break;
+            });
         }
 
         private static void RegisterAllHooks()

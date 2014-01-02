@@ -40,5 +40,19 @@ namespace HackMaineIrcBotSvc_Tests
             Assert.IsFalse(urlHook.CanHandle(urlBad3));
             Assert.IsFalse(urlHook.CanHandle(urlBad4));
         }
+
+        [TestMethod]
+        public void GetTileTest()
+        {
+            string title = "Page Title";
+            var html = string.Format("<html><head><title>{0}</title></head><body>Body text</body></html>", title);
+            var doc = UrlHook.ParseHtml(html);
+
+            var expected = title;
+            var actual = UrlHook.GetDocumentTitle(doc);
+
+            Assert.AreEqual(expected, actual);
+        }
+
     }
 }
