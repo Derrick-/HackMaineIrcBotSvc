@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Meebey.SmartIrc4net;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,21 +19,37 @@ namespace HackMaineIrcBot.Irc.Commands
         {
             RegisterAllCommands();
             IrcEvents.OnChannelMessage += IrcEvents_OnChannelMessage;
+            IrcEvents.OnQuery += IrcEvents_OnQuery;
+        }
+
+        static void IrcEvents_OnQuery(QueryEventArgs e)
+        {
+            BaseIrcCommand commandobject = FindCommand(e.Data);
+            if (commandobject != null)
+                commandobject.OnQueryMessage(e.Data.Nick, e.Data.Message, e.Data.MessageArray.Skip(1));
         }
 
         static void IrcEvents_OnChannelMessage(ChannelMessageEventArgs e)
         {
-            if (e.Data.MessageArray.Length >0)
+            BaseIrcCommand commandobject= FindCommand(e.Data);
+            if(commandobject!=null)
+                commandobject.OnChannelCommand(e.Data.Channel, e.Data.Message, e.Data.MessageArray.Skip(1));
+        }
+
+        private static BaseIrcCommand FindCommand(IrcMessageData data)
+        {
+            BaseIrcCommand commandobject = null;
+            if (data.MessageArray.Length > 0)
             {
-                string command = e.Data.MessageArray[0];
+                string command = data.MessageArray[0];
                 if (command.Length > 0 && command[0] == commandPrefix)
                 {
                     command = command.Substring(1, command.Length - 1);
-                    BaseIrcCommand commandobject;
                     if (_registry.TryGetValue(command, out commandobject))
-                        commandobject.OnChannelCommand(e.Data.Channel, e.Data.Message, e.Data.MessageArray.Skip(1));
+                        return commandobject;
                 }
             }
+            return null;
         }
 
         private static void RegisterAllCommands()
@@ -44,13 +61,13 @@ namespace HackMaineIrcBot.Irc.Commands
                 object[] attrs = t.GetCustomAttributes(typeof(IRCCommandAttribute), false);
                 if (attrs.Length > 0)
                 {
-                    RegisterSingleCommad(t, attrs);
+                    RegisterSingleCommand(t, attrs);
                 }
 
             }
         }
 
-        private static void RegisterSingleCommad(Type t, object[] attrs)
+        private static void RegisterSingleCommand(Type t, object[] attrs)
         {
             foreach (IRCCommandAttribute attr in attrs)
             {

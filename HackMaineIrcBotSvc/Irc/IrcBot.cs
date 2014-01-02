@@ -106,19 +106,8 @@ namespace HackMaineIrcBot.Irc
         {
             if (Program.Debug)
                 Console.WriteLine("<- Query: {0} | {1} | {2}", e.Data.From, e.Data.Channel ?? "null" , e.Data.Message);
-    
-            switch (e.Data.MessageArray[0])
-            {
-                case "join":
-                    WriteLine(Rfc2812.Join(e.Data.MessageArray[1]), Priority.Low);
-                    break;
-                case "part":
-                    WriteLine(Rfc2812.Part(e.Data.MessageArray[1]), Priority.Low);
-                    break;
-                case "say":
-                    SendMessage(SendType.Message, e.Data.MessageArray[1], e.Data.MessageArray[2]);
-                    break;
-            }
+
+            IrcEvents.InvokeOnQuery(new QueryEventArgs(e.Data));
         }
 
         static void Login(string nick, string realname)

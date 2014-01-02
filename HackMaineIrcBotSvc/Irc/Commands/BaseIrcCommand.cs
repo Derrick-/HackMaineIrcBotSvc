@@ -8,18 +8,72 @@ namespace HackMaineIrcBot.Irc.Commands
 {
     abstract class BaseIrcCommand
     {
+        public virtual bool HandlesChannelCommands { get { return true; } }
+        public virtual bool HandlesQueryCommands { get { return true; } }
+        
         public abstract string Description {get;}
-        public abstract string UsageSuffix { get; }
-        public abstract void OnChannelCommand(string channel, string command, IEnumerable<string> args);
+        public virtual string UsageSuffix { get { return null; } }
+        
+        protected abstract void Handle(CommandResponder responder, string command, IEnumerable<string> args);
 
-        protected void SendChannelMessage(string channel, string format, params object[] args)
+        public virtual void OnQueryMessage(string from, string command, IEnumerable<string> args)
         {
-            SendMessage(SendType.Message, channel, string.Format(format, args));
+            if (HandlesQueryCommands)
+                Handle(new QueryResponder(from), command, args);
         }
 
-        protected void SendMessage(SendType type, string destination, string message)
+        public virtual void OnChannelCommand(string channel, string command, IEnumerable<string> args)
         {
-            IrcBot.SendMessage(type, destination, message);
+            if (HandlesChannelCommands)
+                Handle(new ChannelResponder(channel), command, args);
+        }
+
+        protected class QueryResponder : CommandResponder
+        {
+            readonly string user;
+            public QueryResponder(string user)
+            {
+                this.user = user;
+            }
+
+            public override void SendResponseLine(string format, params object[] args)
+            {
+                SendMessage(SendType.Message, user, format, args);
+            }
+        }
+
+        protected class ChannelResponder : CommandResponder
+        {
+            readonly string channel;
+            public ChannelResponder(string channel)
+            {
+                this.channel = channel;
+            }
+
+            public override void SendResponseLine(string format, params object[] args)
+            {
+                SendChannelMessage(channel, format, args);
+            }
+        }
+
+        protected abstract class CommandResponder
+        {
+            public abstract void SendResponseLine(string format, params object[] args);
+
+            protected void SendChannelMessage(string channel, string format, params object[] args)
+            {
+                SendMessage(SendType.Message, channel, string.Format(format, args));
+            }
+
+            protected void SendMessage(SendType type, string destination, string message)
+            {
+                IrcBot.SendMessage(type, destination, message);
+            }
+ 
+            protected void SendMessage(SendType type, string destination, string format, params object[] args)
+            {
+                IrcBot.SendMessage(type, destination, string.Format(format, args));
+            }
         }
 
     }
