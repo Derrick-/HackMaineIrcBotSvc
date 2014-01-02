@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using HackMaineIrcBot.Irc.Hooks;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace HackMaineIrcBot.Irc.Commands.Handlers
@@ -58,11 +59,6 @@ namespace HackMaineIrcBot.Irc.Commands.Handlers
             }
         }
 
-        private void SendHooksList(BaseIrcResponder responder, bool verbose = false)
-        {
-            responder.SendResponseLine("There are no registered hooks.");
-        }
-
         private void SendCommandList(BaseIrcResponder responder, bool verbose = false)
         {
             var items = IrcCommandHandler.Registry;
@@ -71,12 +67,31 @@ namespace HackMaineIrcBot.Irc.Commands.Handlers
                 SendCommandInfo(responder, nfo, verbose);
         }
 
+        private void SendHooksList(BaseIrcResponder responder, bool verbose = false)
+        {
+            var items = BaseIrcHook.Registry;
+            int count = items.Count();
+            if (count < 1)
+                responder.SendResponseLine("There are no registered hooks.");
+            else
+            {
+                responder.SendResponseLine("There are {0} registered hooks:", count);
+                foreach (var hook in items)
+                    SendHookInfo(responder, hook, verbose);
+            }
+        }
+
         private void SendCommandInfo(BaseIrcResponder responder, KeyValuePair<string, BaseIrcCommand> nfo, bool verbose = false)
         {
             if (verbose)
-                responder.SendResponseLine("  {0}{1,-40}: {2}, IrcCommandHandler.commandPrefix", IrcCommandHandler.commandPrefix, string.IsNullOrWhiteSpace(nfo.Value.UsageSuffix) ? nfo.Key : string.Format("{0} {1}", nfo.Key, nfo.Value.UsageSuffix), nfo.Value.Description);
+                responder.SendResponseLine("  {0}{1,-40}: {2}", IrcCommandHandler.commandPrefix, string.IsNullOrWhiteSpace(nfo.Value.UsageSuffix) ? nfo.Key : string.Format("{0} {1}", nfo.Key, nfo.Value.UsageSuffix), nfo.Value.Description);
             else
                 responder.SendResponseLine("  {0}{1,-10}: {2}", IrcCommandHandler.commandPrefix, nfo.Key, nfo.Value.Description);
+        }
+
+        private void SendHookInfo(BaseIrcResponder responder, BaseIrcHook hook, bool verbose)
+        {
+            responder.SendResponseLine("  {0,-10}: {1}", hook.Name, hook.Description);
         }
     }
 }

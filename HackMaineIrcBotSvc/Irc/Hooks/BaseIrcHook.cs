@@ -37,10 +37,10 @@ namespace HackMaineIrcBot.Irc.Hooks
                     object[] attrs = GetType().GetCustomAttributes(typeof(IRCHookAttribute), false);
                     if (attrs.Length > 0)
                         _description = ((IRCHookAttribute)attrs[0]).Description;
-                    if (_name == null)
+                    if (_description == null)
                         _description = string.Empty;
                 }
-                return _name;
+                return _description;
             }
         }
 
