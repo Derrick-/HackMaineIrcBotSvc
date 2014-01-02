@@ -10,7 +10,7 @@ namespace HackMaineIrcBot.Irc.Commands
 {
     class IrcCommandHandler
     {
-        const char commandPrefix = '.';
+        public const char commandPrefix = '.';
 
         static Dictionary<string, BaseIrcCommand> _registry = new Dictionary<string, BaseIrcCommand>();
         public static IEnumerable<KeyValuePair<string, BaseIrcCommand>> Registry { get { return _registry; } }

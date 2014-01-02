@@ -33,6 +33,7 @@ namespace HackMaineIrcBot
         private static Thread m_Thread;
         private static string m_ExePath;
         private static bool m_Service;
+        static string m_Name = null;
 
         private static long m_CycleIndex = 1;
         private static float[] m_CyclesPerSecond = new float[100];
@@ -50,6 +51,7 @@ namespace HackMaineIrcBot
 
         public static Assembly Assembly { get { return m_Assembly; } set { m_Assembly = value; } }
         public static Version Version { get { return m_Assembly.GetName().Version; } }
+        public static string Name { get { return m_Name ?? (m_Name = m_Assembly.FullName.Split(',')[0]); } }
         public static Process Process { get { return m_Process; } }
         public static Thread Thread { get { return m_Thread; } }
 

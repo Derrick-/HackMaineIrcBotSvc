@@ -51,6 +51,7 @@
     <Compile Include="Core\EventSink.cs" />
     <Compile Include="Irc\Commands\Handlers\Help.cs" />
     <Compile Include="Irc\Commands\BaseIrcCommand.cs" />
+    <Compile Include="Irc\Commands\Handlers\Version.cs" />
     <Compile Include="Irc\Commands\IRCCommandAttribute.cs" />
     <Compile Include="Irc\Commands\IrcCommandHandler.cs" />
     <Compile Include="Irc\IrcBot.cs" />

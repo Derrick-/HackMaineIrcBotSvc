@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace HackMaineIrcBot.Irc.Commands
+namespace HackMaineIrcBot.Irc.Commands.Handlers
 {
     [IRCCommand("help")]
     class Help : BaseIrcCommand
@@ -46,8 +46,11 @@ namespace HackMaineIrcBot.Irc.Commands
                         break;
                     default:
                         KeyValuePair<string, BaseIrcCommand> nfo = IrcCommandHandler.Registry.Where(m => m.Key == arg).FirstOrDefault();
-                        if (nfo.Key!=null)
+                        if (nfo.Key != null)
+                        {
+                            responder.SendResponseLine("Command {0}{1}:", IrcCommandHandler.commandPrefix, nfo.Key);
                             SendCommandInfo(responder, nfo, true);
+                        }
                         else
                             responder.SendResponseLine("I can't help you with that.");
                         break;
@@ -71,9 +74,9 @@ namespace HackMaineIrcBot.Irc.Commands
         private void SendCommandInfo(CommandResponder responder, KeyValuePair<string, BaseIrcCommand> nfo, bool verbose = false)
         {
             if (verbose)
-                responder.SendResponseLine("{0,40}: {1}", string.IsNullOrWhiteSpace(nfo.Value.UsageSuffix) ? nfo.Key : string.Format("{0} {1} ", nfo.Key, nfo.Value.UsageSuffix), nfo.Value.Description);
+                responder.SendResponseLine("  {0}{1,-40}: {2}, IrcCommandHandler.commandPrefix", IrcCommandHandler.commandPrefix, string.IsNullOrWhiteSpace(nfo.Value.UsageSuffix) ? nfo.Key : string.Format("{0} {1}", nfo.Key, nfo.Value.UsageSuffix), nfo.Value.Description);
             else
-                responder.SendResponseLine("{0,10}: {1}", nfo.Key, nfo.Value.Description);
+                responder.SendResponseLine("  {0}{1,-10}: {2}", IrcCommandHandler.commandPrefix, nfo.Key, nfo.Value.Description);
         }
     }
 }
