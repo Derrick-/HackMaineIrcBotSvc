@@ -8,7 +8,7 @@ namespace HackMaineIrcBot.Irc.Commands.Handlers
     class Help : BaseIrcCommand
     {
         public override string Description { get { return "Provides a list of functions"; } }
-        public override string UsageSuffix { get { return "[commands|hooks|all][verbose]"; } }
+        public override string UsageSuffix { get { return "[{command_name}|commands|hooks|all][verbose]"; } }
 
         protected override void Handle(BaseIrcResponder responder, string command, IEnumerable<string> args)
         {

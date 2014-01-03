@@ -16,6 +16,7 @@ namespace HackMaineIrcBotSvc_Tests
             string urlOK3 = "http://hackmaine.org/forums/";
             string urlOK4 = "http://hackmaine.org/forums?hello=there&id=55";
             string urlOK5 = "https://msdn.microsoft.com/en-us/library/ms563775(v=office.14).aspx";
+            string urlOK6 = "https://msdn.microsoft.com:84/en-us/library/ms563775(v=office.14).aspx";
 
             string MessageOK1 = "Guys, check out http://hackmaine.org/forums/, if you dare";
 
@@ -23,6 +24,7 @@ namespace HackMaineIrcBotSvc_Tests
             string urlBad2 = "http://hello";
             string urlBad3 = "http://hackmaine. org/forums/";
             string urlBad4 = "http://hackmaine/forums.org/";
+            //TODO: string urlBad5 = "http://hackmaine.org:80:80/forums";
 
             var urlHook = new UrlHook();
 
@@ -32,6 +34,7 @@ namespace HackMaineIrcBotSvc_Tests
             Assert.IsTrue(urlHook.CanHandle(urlOK3));
             Assert.IsTrue(urlHook.CanHandle(urlOK4));
             Assert.IsTrue(urlHook.CanHandle(urlOK5));
+            Assert.IsTrue(urlHook.CanHandle(urlOK6));
 
             Assert.IsTrue(urlHook.CanHandle(MessageOK1));
 
@@ -39,6 +42,7 @@ namespace HackMaineIrcBotSvc_Tests
             Assert.IsFalse(urlHook.CanHandle(urlBad2));
             Assert.IsFalse(urlHook.CanHandle(urlBad3));
             Assert.IsFalse(urlHook.CanHandle(urlBad4));
+            // Assert.IsFalse(urlHook.CanHandle(urlBad5));
         }
 
         [TestMethod]

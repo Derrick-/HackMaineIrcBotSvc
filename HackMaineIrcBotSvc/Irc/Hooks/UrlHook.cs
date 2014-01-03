@@ -21,9 +21,9 @@ namespace HackMaineIrcBot.Irc.Hooks
             if (FindUrl(e.Data.Message, out found))
             {
                 bool handledAny = false;
-                foreach (var url in found)
+                foreach (var url in found.Distinct())
                 {
-                    string response = await GetPageTitle(url);
+                    string response = await GetPageDescription(url);
                     if (!string.IsNullOrWhiteSpace(response))
                     {
                         responder.SendResponseLine(" [{0}]", response);
@@ -35,12 +35,16 @@ namespace HackMaineIrcBot.Irc.Hooks
             return false;
         }
 
-        private async Task<string> GetPageTitle(string url)
+        delegate Task<string> HttpResponseHandler(System.Net.WebResponse response);
+
+        private async Task<string> GetPageDescription(string url)
         {
-            string html;
+            System.Net.WebResponse response;
+
             try
             {
-                html = await GetHtml(url);
+                System.Net.HttpWebRequest request = System.Net.HttpWebRequest.CreateHttp(url);
+                response = await request.GetResponseAsync();
             }
             catch (System.Net.WebException ex)
             {
@@ -54,21 +58,30 @@ namespace HackMaineIrcBot.Irc.Hooks
             {
                 return ex.Message;
             }
+
+            HttpResponseHandler handler = GetHttpResponseHandler(response);
+            if (handler == null)
+                return null;
+
+            return await handler(response);
+        }
+
+        private HttpResponseHandler GetHttpResponseHandler(System.Net.WebResponse response)
+        {
+            if (response.ContentType.StartsWith("text/html"))
+                return HtmlTitleHandler;
+            return null;
+        }
+
+        async Task<string> HtmlTitleHandler(System.Net.WebResponse response)
+        {
+            string html = await GetHtml(response);
             var doc = ParseHtml(html);
             return GetDocumentTitle(doc);
         }
 
-        private async Task<string> GetHtml(string url)
+        private async Task<string> GetHtml(System.Net.WebResponse response)
         {
-            System.Net.HttpWebRequest request = null;
-            System.Net.WebResponse response = null;
-            request = System.Net.HttpWebRequest.CreateHttp(url);
-            response = await request.GetResponseAsync();
-
-            var header = response.Headers;
-            if (header == null || !((string)header["Content-Type"]).StartsWith("text/html"))
-                return null;
-
             string html;
             using (var sr = new System.IO.StreamReader(response.GetResponseStream()))
                 html = await sr.ReadToEndAsync();
