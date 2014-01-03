@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using HackMaineIrcBot.Irc.Hooks;
+using HackMaineIrcBot.Irc.Hooks.UrlResolvers;
 
 namespace HackMaineIrcBotSvc_Tests
 {
@@ -46,14 +47,14 @@ namespace HackMaineIrcBotSvc_Tests
         }
 
         [TestMethod]
-        public void GetTileTest()
+        public void GetTitleTest()
         {
             string title = "Page Title";
             var html = string.Format("<html><head><title>{0}</title></head><body>Body text</body></html>", title);
-            var doc = UrlHook.ParseHtml(html);
+            var doc = UrlResolver.ParseHtml(html);
 
             var expected = title;
-            var actual = UrlHook.GetDocumentTitle(doc);
+            var actual = UrlResolver.GetDocumentTitle(doc);
 
             Assert.AreEqual(expected, actual);
         }

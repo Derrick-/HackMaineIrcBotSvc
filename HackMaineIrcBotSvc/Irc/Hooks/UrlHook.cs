@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using HackMaineIrcBot.Irc.Hooks.UrlResolvers;
+using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,24 @@ namespace HackMaineIrcBot.Irc.Hooks
         const string urlMatcher = @"(https?)\://([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|localhost|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)?(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-\(\)]+))*";
         Regex urlEx = new Regex(@"(?nix)(?<URL>\b(" + urlMatcher + "))+");
 
+        struct UrlCacheEntry
+        {
+
+            public UrlCacheEntry(string description)
+            {
+                Description = description;
+                Created = DateTime.Now;
+            }
+
+            public string Description;
+            public DateTime Created;
+            public bool IsExpired { get { return DateTime.Now - Created < UrlHook.CacheExpireTime; } }
+
+        }
+
+        public static TimeSpan CacheExpireTime = TimeSpan.FromMinutes(1.0);
+        private static Dictionary<string, UrlCacheEntry> UrlCache = new Dictionary<string, UrlCacheEntry>();
+
         protected override async Task<bool> Handle(BaseIrcResponder responder, ChannelMessageEventArgs e)
         {
             IEnumerable<string> found;
@@ -23,10 +42,18 @@ namespace HackMaineIrcBot.Irc.Hooks
                 bool handledAny = false;
                 foreach (var url in found.Distinct())
                 {
-                    string response = await GetPageDescription(url);
-                    if (!string.IsNullOrWhiteSpace(response))
+                    string description;
+                    UrlCacheEntry entry;
+                    if (UrlCache.TryGetValue(url, out entry) && !entry.IsExpired)
+                        description = entry.Description;
+                    else
                     {
-                        responder.SendResponseLine(" [{0}]", response);
+                        description = await GetPageDescription(url);
+                        UrlCache[url] = new UrlCacheEntry(description);
+                    }
+                    if (!string.IsNullOrWhiteSpace(description))
+                    {
+                        responder.SendResponseLine(" [{0}]", description);
                         handledAny = true;
                     }
                 }
@@ -34,8 +61,6 @@ namespace HackMaineIrcBot.Irc.Hooks
             }
             return false;
         }
-
-        delegate Task<string> HttpResponseHandler(System.Net.WebResponse response);
 
         private async Task<string> GetPageDescription(string url)
         {
@@ -59,50 +84,18 @@ namespace HackMaineIrcBot.Irc.Hooks
                 return ex.Message;
             }
 
-            HttpResponseHandler handler = GetHttpResponseHandler(response);
+            UrlResolver handler = GetHttpResponseHandler(response);
             if (handler == null)
                 return null;
 
-            return await handler(response);
+            return await handler.Handle(response);
         }
 
-        private HttpResponseHandler GetHttpResponseHandler(System.Net.WebResponse response)
+        private UrlResolver GetHttpResponseHandler(System.Net.WebResponse response)
         {
             if (response.ContentType.StartsWith("text/html"))
-                return HtmlTitleHandler;
+                return new TitleResolver();
             return null;
-        }
-
-        async Task<string> HtmlTitleHandler(System.Net.WebResponse response)
-        {
-            string html = await GetHtml(response);
-            var doc = ParseHtml(html);
-            return GetDocumentTitle(doc);
-        }
-
-        private async Task<string> GetHtml(System.Net.WebResponse response)
-        {
-            string html;
-            using (var sr = new System.IO.StreamReader(response.GetResponseStream()))
-                html = await sr.ReadToEndAsync();
-
-            return html;
-        }
-
-        internal static string GetDocumentTitle(HtmlDocument doc)
-        {
-            var title = doc.DocumentNode.SelectNodes("/html/head/title");
-            if (title == null)
-                return null;
-            var titleLine = title.First().InnerText.Trim().Split(new char[] { '\n', '\r' }, 1, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            return titleLine.Trim();
-        }
-
-        internal static HtmlDocument ParseHtml(string html)
-        {
-            HtmlDocument doc = new HtmlDocument();
-            doc.LoadHtml(html);
-            return doc;
         }
 
         internal bool CanHandle(string message)

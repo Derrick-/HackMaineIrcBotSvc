@@ -8,6 +8,23 @@ namespace HackMaineIrcBot
 {
     public static class ReflectionUtils
     {
+        public delegate void RegisterObjectHandler(Type t, object[] attrs);
+
+        public static void RegisterObjects<TBaseClass, TAttribute>(RegisterObjectHandler registerMethod)
+        {
+            List<Type> types = FindInheritedTypes(typeof(TBaseClass));
+            types.Sort(new TypePriorityComparer());
+            foreach (var t in types)
+            {
+                object[] attrs = t.GetCustomAttributes(typeof(TAttribute), false);
+                if (attrs.Length > 0)
+                {
+                    registerMethod(t, attrs);
+                }
+
+            }
+        }
+
         public static List<Type> FindInheritedTypes(Type parenttype)
         {
             List<Type> list = new List<Type>();

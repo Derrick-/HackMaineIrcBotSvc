@@ -55,16 +55,7 @@ namespace HackMaineIrcBot.Irc.Commands
         private static void RegisterAllCommands()
         {
             Console.WriteLine("Registering IRC commands:");
-            List<Type> types = ReflectionUtils.FindInheritedTypes(typeof(BaseIrcCommand));
-            foreach (var t in types)
-            {
-                object[] attrs = t.GetCustomAttributes(typeof(IRCCommandAttribute), false);
-                if (attrs.Length > 0)
-                {
-                    RegisterSingleCommand(t, attrs);
-                }
-
-            }
+            ReflectionUtils.RegisterObjects<BaseIrcCommand, IRCCommandAttribute>(RegisterSingleCommand);
         }
 
         private static void RegisterSingleCommand(Type t, object[] attrs)
@@ -78,7 +69,7 @@ namespace HackMaineIrcBot.Irc.Commands
                 {
                     BaseIrcCommand commandobject = (BaseIrcCommand)Activator.CreateInstance(t);
                     _registry[commandstring] = commandobject;
-                    ConsoleUtils.WriteInfo("Irc Command '{0}' registered to {1}", commandstring, t.Name);
+                    ConsoleUtils.WriteInfo("\tIrc Command '{0}' registered to {1}", commandstring, t.Name);
                 }
             }
         }

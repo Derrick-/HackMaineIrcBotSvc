@@ -60,6 +60,8 @@
     <Compile Include="Irc\Commands\IrcCommandHandler.cs" />
     <Compile Include="Irc\Hooks\BaseIrcHook.cs" />
     <Compile Include="Irc\Hooks\UrlHook.cs" />
+    <Compile Include="Irc\Hooks\UrlResolvers\BaseUrlResolver.cs" />
+    <Compile Include="Irc\Hooks\UrlResolvers\TitleResolver.cs" />
     <Compile Include="Irc\IrcBot.cs" />
     <Compile Include="Core\IrcBotSvc.cs">
       <SubType>Component</SubType>
