@@ -68,11 +68,17 @@ namespace HackMaineIrcBot.Irc
                             if (!value && irc.IsConnected)
                                 irc.Disconnect();
                             else if (!irc.IsConnected)
-                                irc.Connect(IRCServer, Port);
+                                DoConnect();
                         }
                     }
                 }
             }
+        }
+
+        private static void DoConnect()
+        {
+            irc.UseSsl = UseSSL;
+            irc.Connect(IRCServer, UseSSL ? SSLPort : Port);
         }
 
         static void irc_OnConnected(object sender, EventArgs e)
