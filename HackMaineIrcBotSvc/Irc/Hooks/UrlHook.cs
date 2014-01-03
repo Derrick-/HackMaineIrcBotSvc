@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace HackMaineIrcBot.Irc.Hooks
 {
-    [IRCHook("URL Helper","Fetches information on URL's")]
+    [IRCHook("URL Helper", "Fetches information on URL's")]
     [TypePriority(MemberPriority.Lowest)]
     class UrlHook : BaseIrcHook
     {
-        const string urlMatcher = @"(https?)\://([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|localhost|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)*(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-\(\)]+))*";
-        Regex urlEx = new Regex(@"(?nix).*(?<URL>\b(" + urlMatcher + "))+.*");
+        const string urlMatcher = @"(https?)\://([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|localhost|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)?(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-\(\)]+))*";
+        Regex urlEx = new Regex(@"(?nix)(?<URL>\b(" + urlMatcher + "))+");
 
         protected override async Task<bool> Handle(BaseIrcResponder responder, ChannelMessageEventArgs e)
         {
@@ -60,7 +60,7 @@ namespace HackMaineIrcBot.Irc.Hooks
 
         private async Task<string> GetHtml(string url)
         {
-            System.Net.HttpWebRequest request=null;
+            System.Net.HttpWebRequest request = null;
             System.Net.WebResponse response = null;
             request = System.Net.HttpWebRequest.CreateHttp(url);
             response = await request.GetResponseAsync();
@@ -81,7 +81,7 @@ namespace HackMaineIrcBot.Irc.Hooks
             var title = doc.DocumentNode.SelectNodes("/html/head/title");
             if (title == null)
                 return null;
-            var titleLine= title.First().InnerText.Trim().Split(new char[] { '\n', '\r' }, 1, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            var titleLine = title.First().InnerText.Trim().Split(new char[] { '\n', '\r' }, 1, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             return titleLine.Trim();
         }
 
@@ -100,11 +100,11 @@ namespace HackMaineIrcBot.Irc.Hooks
 
         internal bool FindUrl(string message, out IEnumerable<string> found)
         {
-            found=null;
-            var match = urlEx.Match(message);
-            if(!match.Success) return false;
-            var group = match.Groups["URL"];
-            found = new List<string>(group.Captures.Cast<Capture>().Select(m=>m.Value));
+            found = null;
+            var matches = urlEx.Matches(message);
+            if (matches.Count < 1) return false;
+
+            found = new List<string>(matches.Cast<Match>().Select(m => m.Value));
             return true;
         }
     }
