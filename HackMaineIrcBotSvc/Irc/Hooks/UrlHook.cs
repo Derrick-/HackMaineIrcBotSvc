@@ -1,5 +1,4 @@
 ﻿using HackMaineIrcBot.Irc.Hooks.UrlResolvers;
-using HtmlAgilityPack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,54 +47,18 @@ namespace HackMaineIrcBot.Irc.Hooks
                         description = entry.Description;
                     else
                     {
-                        description = await GetPageDescription(url);
+                        description = await UrlResolver.GetPageDescription(url);
                         UrlCache[url] = new UrlCacheEntry(description);
                     }
                     if (!string.IsNullOrWhiteSpace(description))
                     {
-                        responder.SendResponseLine(" [{0}]", description);
+                        responder.SendResponseLine(" {0}", description);
                         handledAny = true;
                     }
                 }
                 return handledAny;
             }
             return false;
-        }
-
-        private async Task<string> GetPageDescription(string url)
-        {
-            System.Net.WebResponse response;
-
-            try
-            {
-                System.Net.HttpWebRequest request = System.Net.HttpWebRequest.CreateHttp(url);
-                response = await request.GetResponseAsync();
-            }
-            catch (System.Net.WebException ex)
-            {
-                return ex.Message;
-            }
-            catch (ArgumentException ex)
-            {
-                return ex.Message;
-            }
-            catch (FormatException ex)
-            {
-                return ex.Message;
-            }
-
-            UrlResolver handler = GetHttpResponseHandler(response);
-            if (handler == null)
-                return null;
-
-            return await handler.Handle(response);
-        }
-
-        private UrlResolver GetHttpResponseHandler(System.Net.WebResponse response)
-        {
-            if (response.ContentType.StartsWith("text/html"))
-                return new TitleResolver();
-            return null;
         }
 
         internal bool CanHandle(string message)
