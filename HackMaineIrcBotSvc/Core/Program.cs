@@ -48,6 +48,7 @@ namespace HackMaineIrcBot
         public static bool Service { get { return m_Service; } }
         public static bool TestMode { get; private set; }
         public static bool Debug { get; private set; }
+        public static bool Interactive { get; private set; }
 
         public static Assembly Assembly { get { return m_Assembly; } set { m_Assembly = value; } }
         public static Version Version { get { return m_Assembly.GetName().Version; } }
@@ -103,12 +104,10 @@ namespace HackMaineIrcBot
 
             Console.WriteLine("Starting...");
 
-            Debug = TestMode = true;
-
             if (args.Length == 1 &&
                 (Insensitive.Equals(args[0], "-install") || Insensitive.Equals(args[0], "-uninstall")
                 || Insensitive.Equals(args[0], "-restart") || Insensitive.Equals(args[0], "-stop")
-                || Insensitive.Equals(args[0], "-start") || Insensitive.Equals(args[0], "-con")))
+                || Insensitive.Equals(args[0], "-start")))
             {
                 if (Insensitive.Equals(args[0], "-restart"))
                 {
@@ -144,6 +143,23 @@ namespace HackMaineIrcBot
                     //Test.Main(args);
                 }
 
+                return;
+            }
+
+            foreach (var arg in args)
+            {
+                if (Insensitive.Equals(arg, "-con"))
+                    Interactive = true;
+                else if(Insensitive.Equals(arg, "-debug"))
+                    Debug=true;
+                else if(Insensitive.Equals(arg, "-test"))
+                    TestMode=true;
+            }
+
+            if (Interactive)
+            {
+                Run(false);
+                //Test.Main(args);
                 return;
             }
 

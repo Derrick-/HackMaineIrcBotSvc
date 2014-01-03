@@ -9,7 +9,7 @@ namespace HackMaineIrcBot.Irc
 
     public class IrcBot
     {
-        public static string IRCServer = "localhost";
+        public static string IRCServer = "irc.freenode.net";
         public static int Port = 6667;
         public static int SSLPort = 7000;
         public static string MainChannel = Program.TestMode ? "#mainehackerclub_test" : "#mainehackerclub";
