@@ -1,0 +1,24 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="HackMaineIrcBot" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="IrcAuthUser" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">MaineHackerBot</Value>
+    </Setting>
+    <Setting Name="IrcAuthPass" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="IrcServer" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">irc.freenode.net</Value>
+    </Setting>
+    <Setting Name="IrcPort" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">6667</Value>
+    </Setting>
+    <Setting Name="IrcSslPort" Type="System.Int32" Scope="Application">
+      <Value Profile="(Default)">7000</Value>
+    </Setting>
+    <Setting Name="IrcUseSsl" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

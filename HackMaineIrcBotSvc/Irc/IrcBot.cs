@@ -9,17 +9,17 @@ namespace HackMaineIrcBot.Irc
 
     public class IrcBot
     {
-        public static string IRCServer = "irc.freenode.net";
-        public static int Port = 6667;
-        public static int SSLPort = 7000;
+        public static string IRCServer = Settings.Default.IrcServer;
+        public static int Port = Settings.Default.IrcPort;
+        public static int SSLPort = Settings.Default.IrcSslPort;
         public static string MainChannel = Program.TestMode ? "#mainehackerclub_test" : "#mainehackerclub";
-        public static string Nick = Program.TestMode ? "MaineHackerBotTest" : "MaineHackerBot";
+        public static string Nick = Program.TestMode ? "MHB_test" : "MaineHackerBot";
         public static string RealName = "Maine Hacker Club Bot";
-        public static string AuthUser = Program.TestMode ? "" : "MaineHackerBot";
-        public static string AuthPass = "sd734lsg%das!oufgew";
+        public static string AuthUser = Settings.Default.IrcAuthUser;
+        public static string AuthPass = Settings.Default.IrcAuthPass;
         public static string AuthServ = "NickServ@services.";
         public static string ChanServ = "ChanServ@services.";
-        public static bool UseSSL = true;
+        public static bool UseSSL = Settings.Default.IrcUseSsl;
         public static bool AutoInv = true;
 
         public static IPEndPoint FixedEndpoint { get; set; }
@@ -110,9 +110,21 @@ namespace HackMaineIrcBot.Irc
         {
             Console.WriteLine("Connected.");
             Login(Nick, RealName);
+            TryAuth();
             WriteLine(Rfc2812.Join(MainChannel), Priority.Low);
-          
             DoListen();
+        }
+
+        private static void TryAuth()
+        {
+            Console.Write("Authing: ");
+            if (!string.IsNullOrWhiteSpace(AuthUser) && !string.IsNullOrWhiteSpace(AuthPass))
+            {
+                Console.WriteLine(AuthUser);
+                irc.SendMessage(SendType.Message, AuthServ, string.Format("IDENTIFY {0} {1}", AuthUser, AuthPass), Priority.High);
+            }
+            else
+                Console.WriteLine("AuthUser or AuthPassword not set. Canceled.");
         }
 
         static void DoListen()

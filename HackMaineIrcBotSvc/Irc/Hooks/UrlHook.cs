@@ -14,6 +14,7 @@ namespace HackMaineIrcBot.Irc.Hooks
     {
         const string urlMatcher = @"(https?)\://([a-zA-Z0-9\.\-]+(\:[a-zA-Z0-9\.&amp;%\$\-]+)*@)*((25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9])\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[1-9]|0)\.(25[0-5]|2[0-4][0-9]|[0-1]{1}[0-9]{2}|[1-9]{1}[0-9]{1}|[0-9])|localhost|([a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(com|edu|gov|int|mil|net|org|biz|arpa|info|name|pro|aero|coop|museum|[a-zA-Z]{2}))(\:[0-9]+)?(/($|[a-zA-Z0-9\.\,\?\'\\\+&amp;%\$#\=~_\-\(\)]+))*";
         Regex urlEx = new Regex(@"(?nix)(?<URL>\b(" + urlMatcher + "))+");
+        static readonly string[] excludedHosts = new string[] { "localhost", "127.0.0.1" };
 
         struct UrlCacheEntry
         {
@@ -41,6 +42,10 @@ namespace HackMaineIrcBot.Irc.Hooks
                 bool handledAny = false;
                 foreach (var url in found.Distinct())
                 {
+                    Uri uri = new Uri(url);
+                    if (excludedHosts.Contains(uri.Host, Insensitive.EqualityComparer))
+                        return true;
+
                     string description;
                     UrlCacheEntry entry;
                     if (UrlCache.TryGetValue(url, out entry) && !entry.IsExpired)

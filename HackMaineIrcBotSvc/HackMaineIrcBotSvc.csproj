@@ -100,6 +100,11 @@
     <Compile Include="Irc\SmartIrc4net3\IrcConnection\IrcTcpClient.cs" />
     <Compile Include="Irc\SmartIrc4net3\Logger.cs" />
     <Compile Include="Core\Timer.cs" />
+    <Compile Include="Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="Utilities\ConsoleUtils.cs" />
     <Compile Include="Utilities\Insensitive.cs" />
     <Compile Include="Core\Program.cs" />
@@ -110,6 +115,10 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+    <None Include="Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Extensions\" />

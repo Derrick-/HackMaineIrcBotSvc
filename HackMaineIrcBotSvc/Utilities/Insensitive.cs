@@ -20,16 +20,37 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace HackMaineIrcBot
 {
+    public class InsensitiveEqualityComparer : IEqualityComparer<string>
+    {
+
+        public bool Equals(string x, string y)
+        {
+            return Insensitive.Equals(x, y);
+        }
+
+        public int GetHashCode(string obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
     public class Insensitive
     {
         private static IComparer m_Comparer = CaseInsensitiveComparer.Default;
+        private static readonly IEqualityComparer<string> m_EqualityComparer = new InsensitiveEqualityComparer();
 
         public static IComparer Comparer
         {
             get { return m_Comparer; }
+        }
+
+        public static IEqualityComparer<string> EqualityComparer
+        {
+            get { return m_EqualityComparer; }
         }
 
         private Insensitive()

@@ -116,6 +116,8 @@ namespace HackMaineIrcBot
                 }
                 else if (Insensitive.Equals(args[0], "-install"))
                 {
+                    CheckSetPass();
+                    
                     ServiceInstaller si = new ServiceInstaller();
                     if (si.InstallService(Assembly.GetExecutingAssembly().Location + " -service", IrcBotSvc.GlobalServiceName, IrcBotSvc.GlobalServiceName + " Service"))
                         Console.WriteLine("The " + IrcBotSvc.GlobalServiceName + " service has been installed.");
@@ -159,7 +161,30 @@ namespace HackMaineIrcBot
             }
             else
             {
+                CheckSetPass();
                 Run();
+            }
+        }
+
+        private static void CheckSetPass()
+        {
+            if (string.IsNullOrWhiteSpace(Settings.Default.IrcAuthPass))
+            {
+                Console.Write("IRC Auth Password not set. Would you like to set it now? (Y/N): ");
+                var response = Console.ReadKey();
+                Console.WriteLine();
+                if (response.KeyChar == 'Y' || response.KeyChar == 'y')
+                {
+                    Console.Write("AuthPass: ");
+                    string pass = Console.ReadLine();
+                    if (!string.IsNullOrWhiteSpace(pass))
+                    {
+                        Settings.Default.IrcAuthPass = pass;
+                        Settings.Default.Save();
+                    }
+                    else
+                        Console.WriteLine("Canceled");
+                }
             }
         }
 
