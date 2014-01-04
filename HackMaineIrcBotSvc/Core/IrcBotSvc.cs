@@ -14,34 +14,11 @@ using System.Threading.Tasks;
 
 namespace HackMaineIrcBot
 {
-    public struct SERVICE_STATUS
-    {
-        public int serviceType;
-        public int currentState;
-        public int controlsAccepted;
-        public int win32ExitCode;
-        public int serviceSpecificExitCode;
-        public int checkPoint;
-        public int waitHint;
-    }
-
-    public enum State
-    {
-        SERVICE_STOPPED = 0x00000001,
-        SERVICE_START_PENDING = 0x00000002,
-        SERVICE_STOP_PENDING = 0x00000003,
-        SERVICE_RUNNING = 0x00000004,
-        SERVICE_CONTINUE_PENDING = 0x00000005,
-        SERVICE_PAUSE_PENDING = 0x00000006,
-        SERVICE_PAUSED = 0x00000007,
-    }
-
     public partial class IrcBotSvc : ServiceBase
     {
         private static MultiTextWriter m_MultiConOut;
 
         public const string GlobalServiceName = "MaineHackerBot";
-
         public IrcBotSvc()
         {
             InitializeComponent();
@@ -54,10 +31,10 @@ namespace HackMaineIrcBot
             this.EventLog.Source = ServiceName;
 
             string datecode = DateTime.Now.ToString("yyyyMMddHHmmss");
-            string FileName = string.Format("Poll{0}.log", datecode);
-
-            Console.SetOut(m_MultiConOut = new MultiTextWriter(Console.Out, new FileLogger(new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName + "\\" + FileName)));
-
+            string FileName = string.Format("{0}.log", datecode);
+            string path = Path.Combine(new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName, @"logs\console\");
+            Directory.CreateDirectory(path);
+            Console.SetOut(m_MultiConOut = new MultiTextWriter(Console.Out, new FileLogger(Path.Combine(path, FileName))));
         }
 
         public static void ServiceControlStop()
@@ -72,7 +49,7 @@ namespace HackMaineIrcBot
                 Console.WriteLine(" - Stop Signal Sent.");
             }
             else
-                Console.WriteLine(" - Service Stop failed. Service is not running.");
+                Console.WriteLine(" - Service Stop failed. Service is not running (" + Service.Status + ".");
         }
 
         public static bool IsRunning
@@ -91,7 +68,6 @@ namespace HackMaineIrcBot
                 }
             }
         }
-
 
         public static void ServiceControlStart()
         {
@@ -147,19 +123,17 @@ namespace HackMaineIrcBot
             }
         }
 
-        [DllImport("ADVAPI32.DLL", EntryPoint = "SetServiceStatus")]
-        public static extern bool SetServiceStatus(
-                        IntPtr hServiceStatus,
-                        SERVICE_STATUS lpServiceStatus
-                        );
-        //private SERVICE_STATUS myServiceStatus;
-
+        private Thread workerThread;
         protected override void OnStart(string[] args)
         {
             Console.WriteLine("Service Starting...");
 
-            Thread.Sleep(TimeSpan.FromSeconds(30));
-            Program.Run(true);
+            workerThread = new Thread(new ThreadStart(Program.Run));
+            System.Diagnostics.Trace.WriteLine("Starting Service Worker Thread.");
+            workerThread.Start();
+
+            //myServiceStatus.currentState = (int)State.SERVICE_RUNNING;
+            //SetServiceStatus(handle, myServiceStatus);
         }
 
         protected override void OnStop()

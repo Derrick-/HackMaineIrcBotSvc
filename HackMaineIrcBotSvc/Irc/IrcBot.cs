@@ -37,8 +37,31 @@ namespace HackMaineIrcBot.Irc
             irc.OnChannelMessage += irc_OnChannelMessage;
             irc.OnConnecting += irc_OnConnecting;
             irc.OnConnected += irc_OnConnected;
-
+            irc.OnJoin += irc_OnJoin;
+            irc.OnInvite += irc_OnInvite;
+            irc.OnDisconnected += irc_OnDisconnected;
+            irc.OnModeChange += irc_OnModeChange;
             Timer.DelayCall(() => { Enabled = true; });
+        }
+
+        static void irc_OnModeChange(object sender, IrcEventArgs e)
+        {
+            Console.WriteLine("Mode change: " + e.Data.Message);
+        }
+
+        static void irc_OnDisconnected(object sender, EventArgs e)
+        {
+            Console.WriteLine("Disconnected.");
+        }
+
+        static void irc_OnInvite(object sender, InviteEventArgs e)
+        {
+            Console.WriteLine("Invited to " + e.Channel + " by " + e.Who);
+        }
+
+        static void irc_OnJoin(object sender, JoinEventArgs e)
+        {
+            Console.WriteLine("Joined " + e.Channel);
         }
 
         static void irc_OnConnecting(object sender, EventArgs e)
@@ -78,11 +101,14 @@ namespace HackMaineIrcBot.Irc
         private static void DoConnect()
         {
             irc.UseSsl = UseSSL;
-            irc.Connect(IRCServer, UseSSL ? SSLPort : Port);
+            int port=UseSSL ? SSLPort : Port;
+            Console.WriteLine("Connecting to {0} on port {1}{2}", IRCServer, port, UseSSL ? " using SSL" : "");
+            irc.Connect(IRCServer, port);
         }
 
         static void irc_OnConnected(object sender, EventArgs e)
         {
+            Console.WriteLine("Connected.");
             Login(Nick, RealName);
             WriteLine(Rfc2812.Join(MainChannel), Priority.Low);
           
@@ -120,6 +146,8 @@ namespace HackMaineIrcBot.Irc
         {
             if (Program.Debug)
                 Console.WriteLine("-> Login: {0} | {1}", nick, realname);
+            else
+                Console.WriteLine("-> Login: {0}", nick);
            
             irc.Login(nick, realname);
         }

@@ -32,7 +32,6 @@ namespace HackMaineIrcBot
         private static Process m_Process;
         private static Thread m_Thread;
         private static string m_ExePath;
-        private static bool m_Service;
         static string m_Name = null;
 
         private static long m_CycleIndex = 1;
@@ -45,10 +44,9 @@ namespace HackMaineIrcBot
         public static bool Closing { get { return m_Closing; } }
 
         public static string Arguments { get; set; }
-        public static bool Service { get { return m_Service; } }
+        public static bool Service { get; private set; }
         public static bool TestMode { get; private set; }
         public static bool Debug { get; private set; }
-        public static bool Interactive { get; private set; }
 
         public static Assembly Assembly { get { return m_Assembly; } set { m_Assembly = value; } }
         public static Version Version { get { return m_Assembly.GetName().Version; } }
@@ -102,12 +100,7 @@ namespace HackMaineIrcBot
         {
             Arguments = string.Join(" ", args);
 
-            Console.WriteLine("Starting...");
-
-            if (args.Length == 1 &&
-                (Insensitive.Equals(args[0], "-install") || Insensitive.Equals(args[0], "-uninstall")
-                || Insensitive.Equals(args[0], "-restart") || Insensitive.Equals(args[0], "-stop")
-                || Insensitive.Equals(args[0], "-start")))
+            if (args.Length == 1 && IsServiceCommand(args[0]))
             {
                 if (Insensitive.Equals(args[0], "-restart"))
                 {
@@ -124,7 +117,7 @@ namespace HackMaineIrcBot
                 else if (Insensitive.Equals(args[0], "-install"))
                 {
                     ServiceInstaller si = new ServiceInstaller();
-                    if (si.InstallService(IrcBotSvc.GlobalServiceName + " -service", IrcBotSvc.GlobalServiceName, IrcBotSvc.GlobalServiceName + " Service"))
+                    if (si.InstallService(Assembly.GetExecutingAssembly().Location + " -service", IrcBotSvc.GlobalServiceName, IrcBotSvc.GlobalServiceName + " Service"))
                         Console.WriteLine("The " + IrcBotSvc.GlobalServiceName + " service has been installed.");
                     else
                         Console.WriteLine("An error occurred during service installation.");
@@ -137,43 +130,52 @@ namespace HackMaineIrcBot
                     else
                         Console.WriteLine("An error occurred during service removal.");
                 }
-                else if (Insensitive.Equals(args[0], "-con"))
-                {
-                    Run(false);
-                    //Test.Main(args);
-                }
-
                 return;
             }
 
             foreach (var arg in args)
             {
-                if (Insensitive.Equals(arg, "-con"))
-                    Interactive = true;
-                else if(Insensitive.Equals(arg, "-debug"))
+                if(Insensitive.Equals(arg, "-debug"))
                     Debug=true;
                 else if(Insensitive.Equals(arg, "-test"))
                     TestMode=true;
+                else if (Insensitive.Equals(arg, "-service"))
+                    Service = true;
+                else if (IsServiceCommand(arg))
+                {
+                    Console.WriteLine("Service commands may not be used with oother arguments");
+                    return;
+                }
             }
 
-            if (Interactive)
+            if (Service)
             {
-                Run(false);
-                //Test.Main(args);
-                return;
+                ServiceBase[] ServicesToRun;
+                ServicesToRun = new ServiceBase[] 
+			    { 
+				    new IrcBotSvc()
+			    };
+                ServiceBase.Run(ServicesToRun);
             }
-
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[] 
-			{ 
-				new IrcBotSvc()
-			};
-            ServiceBase.Run(ServicesToRun);
+            else
+            {
+                Run();
+            }
         }
 
-        internal static void Run(bool asService=false)
+        private static bool IsServiceCommand(string arg)
         {
-            m_Service = asService;
+            return 
+                Insensitive.Equals(arg, "-install") ||
+                Insensitive.Equals(arg, "-uninstall") ||
+                Insensitive.Equals(arg, "-restart") || 
+                Insensitive.Equals(arg, "-stop") ||
+                Insensitive.Equals(arg, "-start");
+        }
+
+        internal static void Run()
+        {
+            Console.WriteLine("Starting...");
 
             m_Thread = Thread.CurrentThread;
             m_Process = Process.GetCurrentProcess();
@@ -315,7 +317,7 @@ namespace HackMaineIrcBot
 
         private static bool OnConsoleEvent(ConsoleEventType type)
         {
-            if ((m_Service && type == ConsoleEventType.CTRL_LOGOFF_EVENT))
+            if ((Service && type == ConsoleEventType.CTRL_LOGOFF_EVENT))
                 return true;
 
             Kill();
@@ -351,7 +353,7 @@ namespace HackMaineIrcBot
                 {
                 }
 
-                if (!close && !m_Service)
+                if (!close && !Service)
                 {
                     Console.WriteLine("This exception is fatal, press return to exit");
                     Console.ReadLine();
@@ -363,12 +365,12 @@ namespace HackMaineIrcBot
 
         internal static void Continue()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Pause and Continue not implemented...");
         }
 
         internal static void Pause()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("Pause and Continue not implemented...");
         }
     }
 }
