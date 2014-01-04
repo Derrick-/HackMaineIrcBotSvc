@@ -160,8 +160,8 @@ namespace HackMaineIrcBot.Irc
                 Console.WriteLine("-> Login: {0} | {1}", nick, realname);
             else
                 Console.WriteLine("-> Login: {0}", nick);
-           
-            irc.Login(nick, realname);
+
+            irc.Login(nick, realname, 0, nick, null);
         }
 
         void WriteLine(string data)
@@ -203,7 +203,7 @@ namespace HackMaineIrcBot.Irc
             {
                 IPAddress ip;
                 string line;
-                using (StreamReader sr = new StreamReader("ipaddr.cfg"))
+                using (StreamReader sr = new StreamReader(Path.Combine(Program.WorkingFolder, "ipaddr.cfg")))
                     line = sr.ReadLine();
                 if (!IPAddress.TryParse(line, out ip))
                 {

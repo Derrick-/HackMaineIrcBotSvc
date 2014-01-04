@@ -32,6 +32,7 @@ namespace HackMaineIrcBot
         private static Process m_Process;
         private static Thread m_Thread;
         private static string m_ExePath;
+        private static string m_WorkingFolder;
         static string m_Name = null;
 
         private static long m_CycleIndex = 1;
@@ -60,11 +61,22 @@ namespace HackMaineIrcBot
             {
                 if (m_ExePath == null)
                 {
-                    m_ExePath = Assembly.Location;
-                    //m_ExePath = Process.GetCurrentProcess().MainModule.FileName;
+                    //m_ExePath = Assembly.Location;
+                    m_ExePath = Process.GetCurrentProcess().MainModule.FileName;
                 }
 
                 return m_ExePath;
+            }
+        }
+
+        public static string WorkingFolder
+        {
+            get
+            {
+                if (m_WorkingFolder == null)
+                    m_WorkingFolder = new FileInfo(ExePath).Directory.FullName;
+
+                return m_WorkingFolder;
             }
         }
 

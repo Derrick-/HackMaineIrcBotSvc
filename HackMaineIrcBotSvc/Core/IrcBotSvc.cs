@@ -32,7 +32,7 @@ namespace HackMaineIrcBot
 
             string datecode = DateTime.Now.ToString("yyyyMMddHHmmss");
             string FileName = string.Format("{0}.log", datecode);
-            string path = Path.Combine(new FileInfo(Assembly.GetExecutingAssembly().Location).Directory.FullName, @"logs\console\");
+            string path = Path.Combine(Program.WorkingFolder, @"logs\console\");
             Directory.CreateDirectory(path);
             Console.SetOut(m_MultiConOut = new MultiTextWriter(Console.Out, new FileLogger(Path.Combine(path, FileName))));
         }
